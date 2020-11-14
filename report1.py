@@ -1,5 +1,112 @@
-import sys
+import pymysql
+import sys, datetime
 from PyQt5.QtWidgets import *
+
+class DB_Utils:
+
+    def queryExecutor(self, db, sql, params):
+        conn = pymysql.connect(host='localhost', user='root', password='yh691220', db=db, charset='utf8')
+
+        try:
+            with conn.cursor(pymysql.cursors.DictCursor) as cursor:  # dictionary based cursor
+                cursor.execute(sql, params)
+                tuples = cursor.fetchall()
+                return tuples
+        except Exception as e:
+            print(e)
+            print(type(e))
+        finally:
+            conn.close()
+
+    def updateExecutor(self, db, sql, params):
+        conn = pymysql.connect(host='localhost', user='root', password='yh691220', db=db, charset='utf8')
+
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(sql, params)
+            conn.commit()
+        except Exception as e:
+            print(e)
+            print(type(e))
+        finally:
+            conn.close()
+
+class DB_Queries:
+    # 모든 검색문은 여기에 각각 하나의 메소드로 정의
+
+    def selectPlayerTeamid(self):
+        sql = "SELECT DISTINCT team_id FROM player"
+        params = ()
+
+        util = DB_Utils()
+        tuples = util.queryExecutor(db="kleague", sql=sql, params=params)
+        return tuples
+
+    def selectPlayerUsingTeamid(self, value):
+        if value == '없음':
+            sql = "SELECT * FROM player WHERE team_id IS NULL"
+            params = ()
+        else:
+            sql = "SELECT * FROM player WHERE team_id = %s"
+            params = (value)  # SQL문의 실제 파라미터 값의 튜플
+
+        util = DB_Utils()
+        tuples = util.queryExecutor(db="kleague", sql=sql, params=params)
+        return tuples
+
+    def selectPlayerPosition(self):
+        sql = "SELECT DISTINCT position FROM player"
+        params = ()
+
+        util = DB_Utils()
+        tuples = util.queryExecutor(db="kleague", sql=sql, params=params)
+        return tuples
+
+    def selectPlayerUsingPosition(self, value):
+        if value == '없음':
+            sql = "SELECT * FROM player WHERE position IS NULL"
+            params = ()
+        else:
+            sql = "SELECT * FROM player WHERE position = %s"
+            params = (value)  # SQL문의 실제 파라미터 값의 튜플
+
+        util = DB_Utils()
+        tuples = util.queryExecutor(db="kleague", sql=sql, params=params)
+        return tuples
+
+    def selectPlayerNation(self):
+        sql = "SELECT DISTINCT nation FROM player"
+        params = ()
+
+        util = DB_Utils()
+        tuples = util.queryExecutor(db="kleague", sql=sql, params=params)
+        return tuples
+
+    def selectPlayerUsingNation(self, value):
+        if value == '없음':
+            sql = "SELECT * FROM player WHERE nation IS NULL"
+            params = ()
+        else:
+            sql = "SELECT * FROM player WHERE nation = %s"
+            params = (value)  # SQL문의 실제 파라미터 값의 튜플
+
+        util = DB_Utils()
+        tuples = util.queryExecutor(db="kleague", sql=sql, params=params)
+        return tuples
+
+
+# class DB_Updates:
+#     # 모든 갱신문은 여기에 각각 하나의 메소드로 정의
+#
+#     def insertPlayer(self, player_id, player_name, team_id, position):
+#         sql = "INSERT INTO player (player_id, player_name, team_id, position) VALUES (%s, %s, %s, %s)"
+#         params = (player_id, player_name, team_id, position)
+#
+#         util = DB_Utils()
+#         util.updateExecutor(db="kleague", sql=sql, params=params)
+
+
+#########################################
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -7,62 +114,49 @@ class MainWindow(QWidget):
         self.setupUI()
 
     def setupUI(self):
+
         self.setWindowTitle("선수 테이블 검색")
-        self.setGeometry(0, 0, 500, 500)
+        self.setGeometry(0, 0, 1100, 830)
 
         self.label1 = QLabel("선수 검색", self)
         self.label1.move(50, 20)
         self.label2 = QLabel("팀명:", self)
         self.label2.move(80, 80)
-        cb1 = QComboBox(self)
-        cb1.addItem('사용안함')
-        cb1.addItem('K01')
-        cb1.addItem('k02')
-        cb1.addItem('k03')
-        cb1.addItem('k04')
-        cb1.addItem('k05')
-        cb1.addItem('k06')
-        cb1.addItem('k07')
-        cb1.addItem('k08')
-        cb1.addItem('k09')
-        cb1.addItem('k10')
-        cb1.addItem('k11')
-        cb1.addItem('k12')
-        cb1.addItem('k13')
-        cb1.addItem('k14')
-        cb1.addItem('k15')
-        cb1.move(140, 76)
-        self.setGeometry(0, 0, 400, 150)
+
+        self.comboBox1 = QComboBox(self)
+        query = DB_Queries()
+        rows = query.selectPlayerTeamid()  # rows은 dictionary의 리스트
+        columnName = list(rows[0].keys())[0]
+        items = ['없음' if row[columnName] == None else row[columnName] for row in rows]
+        self.comboBox1.addItems(items)
+        self.comboBox1.move(140, 76)
+        self.comboBox1.activated.connect(self.comboBox1_Activated)
+
         self.label3 = QLabel("포지션:", self)
         self.label3.move(300, 80)
-        cb2 = QComboBox(self)
-        cb2.addItem('사용안함')
-        cb2.addItem('미정')
-        cb2.addItem('DF')
-        cb2.addItem('FW')
-        cb2.addItem('GK')
-        cb2.addItem('MF')
-        cb2.move(380 ,76)
+
+        self.comboBox2 = QComboBox(self)
+        query = DB_Queries()
+        rows = query.selectPlayerPosition()  # rows은 dictionary의 리스트
+        columnName = list(rows[0].keys())[0]
+        items = ['없음' if row[columnName] == None else row[columnName] for row in rows]
+        self.comboBox2.addItems(items)
+        self.comboBox2.move(380, 76)
+
         self.label4 = QLabel("출신국:", self)
         self.label4.move(540, 80)
-        cb3 = QComboBox(self)
-        cb3.addItem('사용안함')
-        cb3.addItem('대한민국')
-        cb3.addItem('김탈리아')
-        cb3.addItem('나이지리아')
-        cb3.addItem('러시아')
-        cb3.addItem('루마니아')
-        cb3.addItem('리투아니아')
-        cb3.addItem('미국')
-        cb3.addItem('보스니아')
-        cb3.addItem('브라질')
-        cb3.addItem('세네갈')
-        cb3.addItem('유고')
-        cb3.addItem('콜롬비아')
-        cb3.addItem('크로아티아')
-        cb3.move(620, 76)
+
+        self.comboBox3 = QComboBox(self)
+        query = DB_Queries()
+        rows = query.selectPlayerNation()  # rows은 dictionary의 리스트
+        columnName = list(rows[0].keys())[0]
+        items = ['없음' if row[columnName] == None else row[columnName] for row in rows]
+        self.comboBox3.addItems(items)
+        self.comboBox3.move(620, 76)
+
         self.pushButton1 = QPushButton("초기화", self)
         self.pushButton1.move(900, 72)
+
         self.label5 = QLabel("키:", self)
         self.label5.move(80, 130)
         self.lineEdit1 = QLineEdit(self)
@@ -91,16 +185,11 @@ class MainWindow(QWidget):
         self.groupbox2.move(660, 116)
         self.pushButton2 = QPushButton("검색", self)
         self.pushButton2.move(900,122)
+        self.pushButton2.clicked.connect(self.pushButton2_Clicked)
 
         self.tableWidget = QTableWidget(self)  # QTableWidget 객체 생성
         self.tableWidget.move(50, 180)
         self.tableWidget.resize(1000, 500)
-        # self.tableWidget.setRowCount(len(players))  # 43
-        # self.tableWidget.setColumnCount(len(players[0]))  # 13
-        # columnNames = list(players[0].keys())
-        # ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ID', 'E_PLAYER_NAME', 'NICKNAME', 'JOIN_YYYY', 'POSITION', 'BACK_NO', 'NATION', 'BIRTH_DATE', 'SOLAR', 'HEIGHT', 'WEIGHT']
-        # self.tableWidget.setHorizontalHeaderLabels(columnNames)
-        # self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         self.label7 = QLabel("파일 출력", self)
         self.label7.move(50, 720)
@@ -117,48 +206,50 @@ class MainWindow(QWidget):
         self.pushButton3 = QPushButton("저장", self)
         self.pushButton3.move(900, 760)
 
-        self.show()
+    def comboBox1_Activated(self):
+        self.teamidValue = self.comboBox1.currentText()  # positionValue를 통해 선택한 포지션 값을 전달
 
-    def createFirstGroup(self):
-        groupbox = QGroupBox()
-        self.radio1 = QRadioButton("이상")
-        self.radio2 = QRadioButton("이하")
+    def comboBox2_Activated(self):
+        self.positionValue = self.comboBox2.currentText()
 
-        hBox = QHBoxLayout()
-        hBox.addWidget(self.radio1)
-        hBox.addWidget(self.radio2)
-        groupbox.setLayout(hBox)
+    def comboBox3_Activated(self):
+        self.nationValue = self.comboBox3.currentText()
 
-        return groupbox
+    def pushButton2_Clicked(self):
 
-    def createSecondGroup(self):
-        groupbox = QGroupBox()
-        self.radio1 = QRadioButton("이상")
-        self.radio2 = QRadioButton("이하")
+        # DB 검색문 실행
+        query = DB_Queries()
+        players = query.selectPlayerUsingPosition(self.teamidValue)
 
-        hBox = QHBoxLayout()
-        hBox.addWidget(self.radio1)
-        hBox.addWidget(self.radio2)
-        groupbox.setLayout(hBox)
+        self.tableWidget.clearContents()
+        self.tableWidget.setRowCount(len(players))
+        self.tableWidget.setColumnCount(len(players[0]))
+        columnNames = list(players[0].keys())
+        self.tableWidget.setHorizontalHeaderLabels(columnNames)
+        self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-        return groupbox
+        for rowIDX in range(len(players)):
+            player = players[rowIDX]
 
-    def createThirdGroup(self):
-        groupbox = QGroupBox()
-        self.radio1 = QRadioButton("CSV")
-        self.radio2 = QRadioButton("JSON")
-        self.radio3 = QRadioButton("XML")
+            for k, v in player.items():
+                columnIDX = columnNames.index(k)
 
-        hBox = QHBoxLayout()
-        hBox.addWidget(self.radio1)
-        hBox.addWidget(self.radio2)
-        hBox.addWidget(self.radio3)
-        groupbox.setLayout(hBox)
+                if v == None:           # 파이썬이 DB의 널값을 None으로 변환함.
+                    continue            # QTableWidgetItem 객체를 생성하지 않음
+                elif isinstance(v, datetime.date):      # QTableWidgetItem 객체 생성
+                    item = QTableWidgetItem(v.strftime('%Y-%m-%d'))
+                else:
+                    item = QTableWidgetItem(str(v))
 
-        return groupbox
+                self.tableWidget.setItem(rowIDX, columnIDX, item)
 
-if __name__ == "__main__":
+        self.tableWidget.resizeColumnsToContents()
+        self.tableWidget.resizeRowsToContents()
+
+def main():
     app = QApplication(sys.argv)
     mainWindow = MainWindow()
     mainWindow.show()
-    app.exec_()
+    sys.exit(app.exec_())
+
+main()
